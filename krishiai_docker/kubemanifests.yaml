@@ -1,0 +1,123 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      kompose.cmd: kompose convert -f docker-compose.yaml -o kubemanifests.yaml
+      kompose.version: 1.19.0 (f63a961c)
+    creationTimestamp: null
+    labels:
+      io.kompose.service: krishiai-tfserving
+    name: krishiai-tfserving
+  spec:
+    type: LoadBalancer
+    ports:
+    - name: "8500"
+      port: 8500
+      targetPort: 8500
+    - name: "8501"
+      port: 8501
+      targetPort: 8501
+    selector:
+      io.kompose.service: krishiai-tfserving
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      kompose.cmd: kompose convert -f docker-compose.yaml -o kubemanifests.yaml
+      kompose.version: 1.19.0 (f63a961c)
+    creationTimestamp: null
+    labels:
+      io.kompose.service: krishiai-web
+    name: krishiai-web
+  spec:
+    type: LoadBalancer
+    ports:
+    - name: "80"
+      port: 80
+      targetPort: 3000
+    selector:
+      io.kompose.service: krishiai-web
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      kompose.cmd: kompose convert -f docker-compose.yaml -o kubemanifests.yaml
+      kompose.version: 1.19.0 (f63a961c)
+    creationTimestamp: null
+    labels:
+      io.kompose.service: krishiai-tfserving
+    name: krishiai-tfserving
+  spec:
+    replicas: 5
+    strategy: {}
+    selector:
+      matchLabels:
+        io.kompose.service: krishiai-tfserving
+    template:
+      metadata:
+        annotations:
+          kompose.cmd: kompose convert -f docker-compose.yaml -o kubemanifests.yaml
+          kompose.version: 1.19.0 (f63a961c)
+        creationTimestamp: null
+        labels:
+          io.kompose.service: krishiai-tfserving
+      spec:
+        containers:
+        - env:
+          - name: MODEL_NAME
+            value: resnet50v2
+          image: satyajitghana/krishiai_model:latest
+          # imagePullPolicy: Never
+          name: tfserving
+          ports:
+          - containerPort: 8500
+          - containerPort: 8501
+          resources: {}
+        restartPolicy: Always
+  status: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      kompose.cmd: kompose convert -f docker-compose.yaml -o kubemanifests.yaml
+      kompose.version: 1.19.0 (f63a961c)
+    creationTimestamp: null
+    labels:
+      io.kompose.service: krishiai-web
+    name: krishiai-web
+  spec:
+    replicas: 5
+    strategy: {}
+    selector:
+      matchLabels:
+        io.kompose.service: krishiai-web
+    template:
+      metadata:
+        annotations:
+          kompose.cmd: kompose convert -f docker-compose.yaml -o kubemanifests.yaml
+          kompose.version: 1.19.0 (f63a961c)
+        creationTimestamp: null
+        labels:
+          io.kompose.service: krishiai-web
+      spec:
+        containers:
+        - env:
+          - name: SERVING_HOSTNAME
+            value: krishiai-tfserving
+          image: satyajitghana/krishiai_backend:latest
+          # imagePullPolicy: Never
+          name: web
+          ports:
+          - containerPort: 3000
+          resources: {}
+        restartPolicy: Always
+  status: {}
+kind: List
+metadata: {}
+
